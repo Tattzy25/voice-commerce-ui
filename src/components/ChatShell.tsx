@@ -125,23 +125,12 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 
     setInputMessage('');
 
-    // DUMB SHELL: simply route query to LiveCommerce or relevant collection
-    const lower = text.toLowerCase();
-    if (lower.includes('numb') || lower.includes('cream')) {
-      liveCommerceRef.current?.ingest(STORE_CATALOG['c1']);
-    } else if (lower.includes('access') || lower.includes('tray') || lower.includes('ink')) {
-      liveCommerceRef.current?.ingest(STORE_CATALOG['c2']);
-    } else if (lower.includes('machine') || lower.includes('pen') || lower.includes('gun')) {
-      liveCommerceRef.current?.ingest(STORE_CATALOG['c3']);
-    } else {
-      // General discovery across catalog
-      const allProducts = Object.values(STORE_CATALOG).flatMap(c => c.products || []);
-      liveCommerceRef.current?.ingest({ view: 'discovery', products: allProducts });
-    }
+    // Query LiveCommerce
+    liveCommerceRef.current?.ingest({ view: 'discovery', products: [] });
   };
 
-  const storeName = storeInfo?.name ?? 'Nba0ey Th';
-  const displayName = storeInfo?.display_name ?? 'Nba0ey Th AI';
+  const storeName = storeInfo?.name ?? '';
+  const displayName = storeInfo?.display_name || storeInfo?.name || '';
 
   return (
     <div className={`fixed z-50 ${className}`}>
@@ -408,7 +397,7 @@ export const ChatShell: React.FC<ChatShellProps> = ({
 
                     {/* Explanatory note at bottom */}
                     <p className="mt-auto pt-6 text-[11px] text-zinc-500 leading-relaxed">
-                      You're in control. You can change these anytime — turning them off won't affect your shopping or skincare advice.
+                      You're in control. You can change these anytime — turning them off won't affect your shopping experience.
                     </p>
                   </motion.div>
                 )}

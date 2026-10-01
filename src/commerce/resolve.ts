@@ -115,7 +115,7 @@ export const resolveUrl = (o: Raw): string | null => {
 
 /* ── identity ───────────────────────────────────────────────────────────── */
 export const resolveTitle = (o: Raw): string =>
-  asString(pick(o, ['title', 'name', 'product_name', 'productName', 'heading', 'display_name', 'displayName', 'item_name', 'label'])) ?? 'Untitled item';
+  asString(pick(o, ['title', 'name', 'product_name', 'productName', 'heading', 'display_name', 'displayName', 'item_name', 'label'])) ?? '';
 
 export const resolveSeller = (o: Raw): string | null => {
   const v = pick(o, ['seller', 'seller_name', 'sellerName', 'merchant', 'merchant_name', 'merchantName', 'merchant_display_name', 'store', 'store_name', 'storeName', 'storefront', 'storefront_name', 'domain', 'brand', 'shop', 'shop_name', 'shop_title', 'shopify_store', 'vendor', 'store_domain', 'sold_by', 'soldBy', 'site', 'site_name']);
@@ -259,13 +259,13 @@ export function resolveOptions(o: Raw): OptionGroup[] {
   const v = pick(o, ['options', 'option_groups', 'optionGroups', 'variant_options', 'variation_options', 'attributes', 'choices']);
   const arr = Array.isArray(v) ? v : v && isObj(v) ? Object.entries(v).map(([k, val]) => ({ name: k, values: val })) : [];
   return arr.map((g: Raw, gi: number): OptionGroup => {
-    const label = asString(pickShallow(g, ['name', 'label', 'option_name', 'title', 'displayName'])) ?? `Option ${gi + 1}`;
+    const label = asString(pickShallow(g, ['name', 'label', 'option_name', 'title', 'displayName'])) ?? '';
     let vals: Raw = pickShallow(g, ['values', 'options', 'items', 'choices', 'option_values']);
     if (!Array.isArray(vals) && isObj(vals)) vals = Object.values(vals);
     if (!Array.isArray(vals) && vals != null) vals = [vals];
     const valArr: Raw[] = Array.isArray(vals) ? vals : [];
     const values: OptionValue[] = valArr.map((x: Raw): OptionValue => {
-      const label2 = asString(isObj(x) ? pickShallow(x, ['label', 'value', 'name', 'title']) : x) ?? '?';
+      const label2 = asString(isObj(x) ? pickShallow(x, ['label', 'value', 'name', 'title']) : x) ?? '';
       return {
         label: label2,
         available: isObj(x) ? resolveAvailTri(x) : null,
@@ -273,7 +273,7 @@ export function resolveOptions(o: Raw): OptionGroup[] {
         media: isObj(x) ? resolveMedia(x)[0] ?? null : null,
         raw: x,
       };
-    }).filter(v2 => v2.label !== '?');
+    }).filter(v2 => v2.label !== '');
     return { id: asString(pickShallow(g, ['id', 'code', 'key'])) ?? `opt${gi}`, label, values, raw: g };
   }).filter(g => g.values.length > 0);
 }
@@ -299,7 +299,7 @@ export function resolveVariants(o: Raw): Variant[] {
     }
     return {
       id: asString(pickShallow(x, ['id', 'sku', 'variant_id', 'variantId'])) ?? `v${i}`,
-      label: (asString(pickShallow(x, ['title', 'label', 'name'])) ?? Object.values(opts).join(' / ')) || `Variant ${i + 1}`,
+      label: asString(pickShallow(x, ['title', 'label', 'name'])) ?? Object.values(opts).join(' / '),
       options: opts,
       priceLabel: resolvePriceLabel(x),
       availability: resolveAvailability(x),
@@ -373,12 +373,13 @@ function resolveTotals(raw: Raw): LabelValue[] {
     ?? pickDeep(raw, ['totals'], 3);
   const arr = Array.isArray(v) ? v : v != null ? [v] : [];
   return arr.map((t: Raw, i: number): LabelValue => {
-    if (!isObj(t)) return { label: 'Total', display: String(t), raw: t };
-    const label = asString(pickShallow(t, ['label', 'type', 'name', 'title', 'description'])) ?? (i === arr.length - 1 ? 'Total' : `Total ${i + 1}`);
+    if (!isObj(t)) return { label: '', display: String(t), raw: t };
+    const label = asString(pickShallow(t, ['label', 'type', 'name', 'title', 'description'])) ?? '';
     const display = asString(pickShallow(t, ['display', 'display_amount', 'formatted', 'formatted_amount', 'price_display', 'text']))
       ?? priceFrom(pickShallow(t, ['amount', 'value', 'price', 'total']), t)
-      ?? asString(pickShallow(t, ['amount', 'value']));
-    return { label, display: display ?? '—', raw: t };
+      ?? asString(pickShallow(t, ['amount', 'value']))
+      ?? '';
+    return { label, display, raw: t };
   });
 }
 export function resolveCart(raw: Raw): CartState {
@@ -424,16 +425,16 @@ export function resolveCheckout(raw: Raw): CheckoutState {
     progress: asStrings(pick(c, ['progress', 'steps', 'checkout_steps', 'stage', 'status'], false)),
     buyerActions: (Array.isArray(pick(c, ['required_actions', 'buyer_actions', 'actions', 'next_actions'], false))
       ? (pick(c, ['required_actions', 'buyer_actions', 'actions', 'next_actions'], false) as Raw[])
-      : []).map(a => ({ label: asString(isObj(a) ? pickShallow(a, ['label', 'title', 'name', 'action']) : a) ?? 'Continue', raw: a })),
+      : []).map(a => ({ label: asString(isObj(a) ? pickShallow(a, ['label', 'title', 'name', 'action']) : a) ?? '', raw: a })),
   };
 }
 export function resolveOrder(raw: Raw): OrderState {
   const o = isObj(pickShallow(raw, ['order', 'order_confirmation', 'confirmation'])) ? pickShallow(raw, ['order', 'order_confirmation', 'confirmation']) : raw;
   const detailsSrc = pick(o, ['details', 'summary', 'lines', 'items'], false);
   const details: LabelValue[] = (Array.isArray(detailsSrc) ? detailsSrc : detailsSrc && isObj(detailsSrc) ? [detailsSrc] : [])
-    .map((d: Raw, i: number): LabelValue => ({
-      label: asString(isObj(d) ? pickShallow(d, ['label', 'type', 'name', 'title']) : null) ?? `Detail ${i + 1}`,
-      display: asString(isObj(d) ? pickShallow(d, ['display', 'value', 'amount', 'formatted', 'text']) : d) ?? '—',
+    .map((d: Raw): LabelValue => ({
+      label: asString(isObj(d) ? pickShallow(d, ['label', 'type', 'name', 'title']) : null) ?? '',
+      display: asString(isObj(d) ? pickShallow(d, ['display', 'value', 'amount', 'formatted', 'text']) : d) ?? '',
       raw: d,
     }));
   return {

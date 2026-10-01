@@ -2,15 +2,15 @@
  * commerce/discovery.ts — Clean shop discovery from .well-known/commerce.json
  *
  * Reads domain, shop name, currency, and schema metadata directly from the endpoint.
- * No hardcoded mock products, images, or silent fake fallbacks.
+ * No hardcoded mock products, images, or synthetic fallbacks.
  */
 import type { StoreInfo } from './types';
 
 export const EMPTY_STORE_INFO: StoreInfo = {
   shop_domain: '',
-  name: 'Store',
-  display_name: 'Store AI',
-  currency: 'USD',
+  name: '',
+  display_name: '',
+  currency: '',
   has_cart_items: false,
   cart_count: 0,
   collections: [],
@@ -28,9 +28,9 @@ export async function discoverStore(customUrl?: string): Promise<StoreInfo> {
       const data = await res.json();
       return {
         shop_domain: data.shop_domain || data.domain || '',
-        name: data.name || data.shop_name || 'Store',
-        display_name: data.display_name || `${data.name || 'Store'} AI`,
-        currency: data.currency || 'USD',
+        name: data.name || data.shop_name || '',
+        display_name: data.display_name || data.name || '',
+        currency: data.currency || '',
         has_cart_items: Boolean(data.has_cart_items),
         cart_count: typeof data.cart_count === 'number' ? data.cart_count : 0,
         collections: Array.isArray(data.collections) ? data.collections : [],

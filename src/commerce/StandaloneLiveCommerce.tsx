@@ -142,7 +142,7 @@ function removeSavedSession() {
 
 export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneLiveCommerceProps>(function StandaloneLiveCommerce(
   {
-    storeName = 'Nba0ey Th',
+    storeName = '',
     onIntent,
     sessionActive = true,
     emitNavigationIntents = false,
@@ -159,18 +159,16 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
   }
 
   const [stage, setStage] = useState<Stage>(() => {
-    if (initialSaved.current?.stage && initialSaved.current.stage !== 'idle') {
+    if (initialSaved.current?.stage) {
       return initialSaved.current.stage;
     }
-    return 'discovery';
+    return 'idle';
   });
   const [products, setProducts] = useState<Product[]>(() => {
     if (initialSaved.current?.products && initialSaved.current.products.length > 0) {
       return initialSaved.current.products;
     }
-    const defaultRaw = STORE_CATALOG['c1'];
-    const routed = defaultRaw ? routeResult(defaultRaw) : null;
-    return routed?.products || [];
+    return [];
   });
   const [page, setPage] = useState(() => initialSaved.current?.page ?? 0);
   const [minimized, setMinimized] = useState(() => initialSaved.current?.minimized ?? false);
@@ -352,15 +350,9 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
   const sendImages = () => {
     if (uploadedImages.length === 0 || isSendingImages) return;
     setIsSendingImages(true);
-    const count = uploadedImages.length;
     setTimeout(() => {
       setIsSendingImages(false);
       setUploadedImages([]);
-      say(`Sent ${count} image${count > 1 ? 's' : ''}`);
-      setTimeout(() => {
-        setDeliveredImage('https://images.unsplash.com/photo-1562962230-16e4623d36e6?auto=format&fit=crop&w=600&q=80');
-        say('Delivered image received');
-      }, 1200);
     }, 550);
   };
 
@@ -391,9 +383,19 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
         say('Virtual try-on result ready');
       }
     };
+    const handleLiveResult = (e: any) => {
+      const raw = e.detail?.raw;
+      if (raw) {
+        ingest(raw);
+      }
+    };
     window.addEventListener('live-commerce:tryon-result', handleTryon);
-    return () => window.removeEventListener('live-commerce:tryon-result', handleTryon);
-  }, [say]);
+    window.addEventListener('live-commerce:result', handleLiveResult);
+    return () => {
+      window.removeEventListener('live-commerce:tryon-result', handleTryon);
+      window.removeEventListener('live-commerce:result', handleLiveResult);
+    };
+  }, [say, ingest]);
 
   useEffect(() => {
     if (!sessionActive) {
@@ -453,7 +455,6 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
         setPendingAdd(true);
         setTimeout(() => {
           setPendingAdd(false);
-          say('Added to bag');
         }, 300);
         break;
       case 'continue_browsing':

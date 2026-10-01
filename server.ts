@@ -1,45 +1,79 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { buildSystemPrompt } from './systemPrompt.ts';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+// CORS headers for deployed Vercel / Storefront endpoints
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Exact endpoint to mint ephemeral client secret using OpenAI Realtime GA API with secure MCP Tools & Env Configuration
 app.post('/api/realtime-session', async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({
-      error: 'OPENAI_API_KEY is not set in server environment.',
+      error: 'OPENAI_API_KEY is not set in server environment.', 
     });
   }
 
-  const domain = req.body?.domain || 'our store';
+  const domain = req.body?.domain || '';
 
   // Securely retrieve configurations from environment variables (never exposed to browser)
   const modelOne = process.env.MODEL_ONE || 'gpt-realtime-2';
-  const modelTwo = process.env.MODEL_TWO || 'gpt-realtime-whisper';
+  const modelTwo = process.env.MODEL_TWO || 'whisper-1';
   const voice = process.env.VOICE || 'shimmer';
   const requiredApproval = process.env.REQUIRED_APPROVAL || 'never';
 
-  const mcpUrlShopping = process.env.MCP_URL_SHOPPING || 'https://master-group-mcp.anigok.com/mcp';
-  const serverLabelShop = process.env.SERVER_LABEL_SHOP || 'my_master_server';
+  const mcpUrlShopping = process.env.MCP_URL_SHOPPING || '';
+  const serverLabelShop = process.env.SERVER_LABEL_SHOP || '';
 
-  const mcpUrlMed = process.env.MCP_URL_MED || 'https://virtual-try-on.anigok.com/mcp';
-  const serverLabelMed = process.env.SERVER_LABEL_MED || 'my_virtual_mcp';
+  const mcpUrlMed = process.env.MCP_URL_MED || '';
+  const serverLabelMed = process.env.SERVER_LABEL_MED || '';
 
-  const profileUrl = process.env.PROFILE_URL || 'https://ucp-agent-profile.facetimefy.com/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json';
+  const profileUrl = process.env.PROFILE_URL || '';
 
-  const payload = {
+  const tools = [];
+  if (serverLabelShop && mcpUrlShopping) {
+    tools.push({
+      type: 'mcp',
+      server_label: serverLabelShop,
+      server_url: mcpUrlShopping,
+      allowed_tools: [
+        'search_catalog',
+        'get_product',
+        'create_cart',
+        'update_cart',
+        'create_checkout',
+        'update_checkout',
+        'search_shop_policies_and_faqs',
+      ],
+      require_approval: requiredApproval,
+    });
+  }
+
+  if (serverLabelMed && mcpUrlMed) {
+    tools.push({
+      type: 'mcp',
+      server_label: serverLabelMed,
+      server_url: mcpUrlMed,
+      allowed_tools: ['virtual_try_on'],
+      require_approval: requiredApproval,
+    });
+  }
+
+  const payload: Record<string, any> = {
     session: {
       type: 'realtime',
       model: modelOne,
@@ -73,32 +107,8 @@ app.post('/api/realtime-session', async (req, res) => {
         },
       },
       output_modalities: ['text', 'audio'],
-      tools: [
-        {
-          type: 'mcp',
-          server_label: serverLabelShop,
-          server_url: mcpUrlShopping,
-          allowed_tools: [
-            'search_catalog',
-            'get_product',
-            'create_cart',
-            'update_cart',
-            'create_checkout',
-            'update_checkout',
-            'search_shop_policies_and_faqs',
-          ],
-          require_approval: requiredApproval,
-        },
-        {
-          type: 'mcp',
-          server_label: serverLabelMed,
-          server_url: mcpUrlMed,
-          allowed_tools: ['virtual_try_on'],
-          require_approval: requiredApproval,
-        },
-      ],
+      ...(tools.length > 0 ? { tools, tool_choice: 'auto' } : {}),
       max_output_tokens: 'inf',
-      tool_choice: 'auto',
     },
   };
 
@@ -159,24 +169,4 @@ app.post('/api/voice-logger', async (req, res) => {
   }
 });
 
-async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-    });
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+export default app;

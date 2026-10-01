@@ -1,6 +1,6 @@
 {
-  "name": "Nba0ey Th AI Chat & Live Commerce",
-  "description": "Floating bubble chat UI with dynamic shop discovery from .well-known and Live Commerce discovery-to-checkout architecture.",
+  "name": "Live Voice Commerce",
+  "description": "Live Voice Commerce discovery-to-checkout architecture powered by OpenAI Realtime WebRTC and MCP tools.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

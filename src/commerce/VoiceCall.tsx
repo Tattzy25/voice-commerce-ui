@@ -118,10 +118,11 @@ export function VoiceVisualizer({
       audioElRef.current = audioEl;
       setRemoteAudioEl(audioEl);
 
-      const domain = typeof window !== 'undefined' ? window.location.hostname : 'our store';
+      const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+      const apiBase = (typeof window !== 'undefined' && ((window as any).VOICE_COMMERCE_API_URL || (window as any).LiveCommerceApiUrl)) || 'https://voicefy.facetimefy.com';
 
       // 3. Request ephemeral client secret from server
-      const res = await fetch('/api/realtime-session', {
+      const res = await fetch(`${apiBase}/api/realtime-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain }),
@@ -165,70 +166,6 @@ export function VoiceVisualizer({
       });
       sessionRef.current = session;
 
-      // 6b. Direct real-time transport listeners for instant zero-latency speech deltas
-      try {
-        (transport as any).on?.('audio_transcript_delta', (deltaEvt: any) => {
-          if (deltaEvt?.delta) {
-            window.dispatchEvent(
-              new CustomEvent('live-commerce:transcript-delta', {
-                detail: { delta: deltaEvt.delta, role: 'assistant' },
-              })
-            );
-          }
-        });
-        (transport as any).on?.('output_text_delta', (deltaEvt: any) => {
-          if (deltaEvt?.delta) {
-            window.dispatchEvent(
-              new CustomEvent('live-commerce:transcript-delta', {
-                detail: { delta: deltaEvt.delta, role: 'assistant' },
-              })
-            );
-          }
-        });
-      } catch {}
-
-      // 6c. RealtimeSession history and agent completion events for instant transcript updates
-      session.on('history_updated', (history: any[]) => {
-        if (!history || history.length === 0) return;
-        const last = history[history.length - 1];
-        if (!last || last.type !== 'message') return;
-
-        const role = last.role === 'user' ? 'user' : 'assistant';
-        let text = '';
-
-        if (Array.isArray(last.content)) {
-          for (const part of last.content) {
-            if (part.type === 'input_audio' && part.transcript) {
-              text = part.transcript;
-            } else if (part.type === 'output_audio' && part.transcript) {
-              text = part.transcript;
-            } else if (part.type === 'output_text' && part.text) {
-              text = part.text;
-            } else if (part.type === 'input_text' && part.text) {
-              text = part.text;
-            }
-          }
-        }
-
-        if (text && text.trim()) {
-          window.dispatchEvent(
-            new CustomEvent('live-commerce:transcript', {
-              detail: { text: text.trim(), role },
-            })
-          );
-        }
-      });
-
-      session.on('agent_end', (_context: any, _agent: any, output: string) => {
-        if (output && output.trim()) {
-          window.dispatchEvent(
-            new CustomEvent('live-commerce:transcript', {
-              detail: { text: output.trim(), role: 'assistant' },
-            })
-          );
-        }
-      });
-
       // 7. Track the 3 visualizer states and tool call responses
       session.on('audio_start', () => {
         setVoiceState('speaking');
@@ -254,6 +191,27 @@ export function VoiceVisualizer({
               })
             );
           }
+
+          let payload: any = details?.result ?? details?.output ?? details;
+          if (typeof payload === 'string') {
+            try { payload = JSON.parse(payload); } catch {}
+          }
+          if (payload?.content?.[0]?.text) {
+            try {
+              const parsedText = JSON.parse(payload.content[0].text);
+              payload = parsedText;
+            } catch {}
+          }
+          if (payload?.structuredContent) {
+            payload = payload.structuredContent;
+          }
+          if (payload) {
+            window.dispatchEvent(
+              new CustomEvent('live-commerce:result', {
+                detail: { raw: payload },
+              })
+            );
+          }
         } catch {}
       });
 
@@ -266,36 +224,6 @@ export function VoiceVisualizer({
           event.type === 'input_audio_buffer.speech_started'
         ) {
           setVoiceState('listening');
-        }
-
-        // Dispatch real-time voice transcriptions (Whisper user audio & assistant output)
-        if (event.type === 'conversation.item.input_audio_transcription.completed') {
-          const userTranscript = event.transcript;
-          if (userTranscript) {
-            window.dispatchEvent(
-              new CustomEvent('live-commerce:transcript', {
-                detail: { text: userTranscript, role: 'user' },
-              })
-            );
-          }
-        } else if (event.type === 'response.audio_transcript.delta') {
-          const delta = event.delta;
-          if (delta) {
-            window.dispatchEvent(
-              new CustomEvent('live-commerce:transcript-delta', {
-                detail: { delta, role: 'assistant' },
-              })
-            );
-          }
-        } else if (event.type === 'response.audio_transcript.done') {
-          const assistantTranscript = event.transcript;
-          if (assistantTranscript) {
-            window.dispatchEvent(
-              new CustomEvent('live-commerce:transcript', {
-                detail: { text: assistantTranscript, role: 'assistant' },
-              })
-            );
-          }
         }
 
         // Detect any returned virtual try-on images from output items

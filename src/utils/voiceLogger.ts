@@ -115,7 +115,7 @@ export function resolveDomain(overrideDomain?: string): string {
   if (typeof window !== 'undefined' && window.location?.hostname) {
     return window.location.hostname;
   }
-  return 'tatty.com';
+  return '';
 }
 
 /**
