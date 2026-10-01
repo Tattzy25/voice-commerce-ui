@@ -52,7 +52,7 @@ export function routeResult(raw: Raw, hint?: { view?: View }): RoutedResult {
   if (orderish) return fill(base, 'complete');
 
   const checkoutish =
-    has(raw, ['checkout_url', 'checkoutUrl', 'continuation_url', 'continuationUrl', 'embed_url', 'embedUrl', 'iframe_url', 'checkout', 'checkout_state']) ||
+    has(raw, ['continue_url', 'continueUrl', 'checkout_url', 'checkoutUrl', 'continuation_url', 'continuationUrl', 'embed_url', 'embedUrl', 'iframe_url', 'checkout', 'checkout_state']) ||
     nk(String(pickShallow(raw, ['stage', 'state']) ?? '')) === 'checkout';
   if (checkoutish) return fill(base, 'checkout');
 

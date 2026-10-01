@@ -7,7 +7,7 @@
  * - Apple-grade 2026/2027 Visualizer HUD in ./voice/AppleVoiceHUD.tsx
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 import { RealtimeAgent, RealtimeSession, OpenAIRealtimeWebRTC } from '@openai/agents/realtime';
 import type { VoiceState } from './voice/types';

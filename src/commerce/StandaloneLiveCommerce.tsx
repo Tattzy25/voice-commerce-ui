@@ -1092,7 +1092,7 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
                   {checkout.messages.join(' · ')}
                 </div>
               )}
-              {checkout.mode === 'iframe' && checkout.url ? (
+              {checkout.url ? (
                 <iframe
                   src={checkout.url}
                   title="Merchant checkout"
@@ -1100,20 +1100,8 @@ export const StandaloneLiveCommerce = forwardRef<LiveCommerceHandle, StandaloneL
                   className="min-h-[320px] w-full flex-1 border-0 bg-white"
                 />
               ) : (
-                <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-                  <ExternalLink size={28} className="text-zinc-400" />
-                  <p className="max-w-sm text-xs leading-relaxed text-zinc-600">
-                    {checkout.messages[0] ?? 'The merchant handles checkout on their own surface.'}
-                  </p>
-                  {checkout.url && (
-                    <button
-                      type="button"
-                      onClick={() => emit({ type: 'checkout_action', actionRaw: { type: 'open_external', url: checkout.url, raw: checkout.raw } })}
-                      className="rounded-full bg-zinc-900 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-zinc-800 cursor-pointer"
-                    >
-                      Continue to merchant checkout
-                    </button>
-                  )}
+                <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-xs text-zinc-500">
+                  {checkout.messages[0] ?? 'Loading checkout...'}
                 </div>
               )}
             </motion.div>

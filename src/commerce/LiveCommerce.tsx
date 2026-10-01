@@ -782,7 +782,7 @@ const LiveCommerce = forwardRef<LiveCommerceHandle, LiveCommerceProps>(function 
                 <X size={13} />
               </button>
             </div>
-            {checkout.mode === 'iframe' && checkout.url ? (
+            {checkout.url ? (
               <iframe
                 src={checkout.url}
                 title="Merchant checkout"
@@ -790,20 +790,8 @@ const LiveCommerce = forwardRef<LiveCommerceHandle, LiveCommerceProps>(function 
                 className="w-full flex-1 border-0 bg-white"
               />
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-                <ExternalLink size={24} className="text-zinc-500 mb-2" />
-                <p className="text-xs text-zinc-400 max-w-xs mb-4">
-                  {checkout.messages[0] ?? 'Complete your order through the verified merchant checkout.'}
-                </p>
-                {checkout.url && (
-                  <button
-                    type="button"
-                    onClick={() => emit({ type: 'checkout_action', actionRaw: { type: 'open_external', url: checkout.url } })}
-                    className="rounded-full bg-white px-5 py-2.5 text-xs font-bold text-zinc-950 hover:bg-zinc-200"
-                  >
-                    Open Merchant Checkout
-                  </button>
-                )}
+              <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-xs text-zinc-400">
+                {checkout.messages[0] ?? 'Loading checkout...'}
               </div>
             )}
           </motion.div>
