@@ -1,0 +1,31 @@
+{
+  "shop_domain": "nba0ey-th.myshopify.com",
+  "name": "Nba0ey Th",
+  "display_name": "Nba0ey Th AI",
+  "currency": "USD",
+  "has_cart_items": true,
+  "cart_count": 2,
+  "collections": [
+    {
+      "id": "c1",
+      "title": "Tattoo Numbing Creams",
+      "handle": "tattoo-numbing-creams",
+      "image": "/src/assets/images/tattoo_numbing_cream_1790709633997.jpg",
+      "itemCount": 12
+    },
+    {
+      "id": "c2",
+      "title": "Tattoo Shop Accessories",
+      "handle": "tattoo-shop-accessories",
+      "image": "/src/assets/images/tattoo_shop_accessories_1790709642499.jpg",
+      "itemCount": 24
+    },
+    {
+      "id": "c3",
+      "title": "Tattoo Machines",
+      "handle": "tattoo-machines",
+      "image": "/src/assets/images/tattoo_machine_pen_1790709652008.jpg",
+      "itemCount": 8
+    }
+  ]
+}
